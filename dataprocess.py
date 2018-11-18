@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 import os
-import librosa
+import seaborn as sns
+#import librosa
+
 
 
 class collect_data:
@@ -106,4 +108,8 @@ if __name__=="__main__":
     axs[1].set_ylabel('Voltage')
     axs[1].set_ylim([-200, 200])
 
+    plt.show()
+    
+    raw_psec = raw_psec.iloc[:, 1:122]
+    sns.heatmap(raw_psec)
     plt.show()
