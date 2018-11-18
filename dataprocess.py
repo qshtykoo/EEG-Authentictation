@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 import os
+import librosa
 
 
 class collect_data:
@@ -86,6 +87,9 @@ if __name__=="__main__":
 
     fwave_list = CD.readFilteredWave()
     fwave = fwave_list[0]
+
+    #rwave.plot()
+    #fwave.plot()
 
 
     fig, axs = plt.subplots(2,1, constrained_layout=True)
