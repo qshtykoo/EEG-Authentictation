@@ -3,6 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 import seaborn as sns
+import math
+import speechpy
 #import librosa
 
 
@@ -50,50 +52,56 @@ class collect_data:
 
 
 class process_data:
-
-    def __init__(self, data_list):
-        self.data_list = data_list
-
-    def lowPass_header(self, freq):
-        header_list = list(self.data_list)
-        header_list = header_list[1:] #get rid of "time" column
-        #convert string list to float list
-        header_list = list(map(float, header_list))
-
-        targeted_index = header_list.index(freq)
-        index_list = np.array(range(targeted_index+1)) #filtered out frequencies above 30Hz
-        header_list_filtered = [ header_list[index] for index in index_list ] #121 frequency bins
+   
+    def generate_features(self, psec, rawwave, low_freq=0, high_freq=30):
+        #first column is time column and should not be selected --> the column index starts from 1
+        psec = psec.iloc[:, low_freq * 4 + 1 : high_freq * 4 + 1 + 1] #four columns per hertz
+        vector = self.compress(psec)
+        
+        mfcc = speechpy.feature.mfcc(rawwave, sampling_frequency=512, fft_length=256, frame_length=0.3, frame_stride=0.05, low_frequency=0.1)
+        vector = np.concatenate((vector, self.compress(mfcc)), axis=1)
+        
+        return vector
     
-        return header_list_filtered
+    def compress(self,arr):
+        # Get rid of temporal dimension by taking a median of each column
+        # (also reshape for sklearn's pairwise distance metrics)
+        medians = np.median(arr, axis=0).reshape(1,-1)
+        p_25 = np.percentile(arr, q=25, axis=0).reshape(1, -1)
+        p_75 = np.percentile(arr, q=75, axis=0).reshape(1, -1)
+        
+        return np.concatenate((medians, p_25, p_75), axis=1)
+
                 
 
 if __name__=="__main__":
     
     dir_path = 'testsubject1/2018-03-17/'
     CD = collect_data(dir_path)
-    psec_list = CD.readPowerSpec()
-
-    #pick a sample to visualize
-    raw_psec = psec_list[0]
-    PD = process_data(raw_psec)
-
-    header_list_filtered = PD.lowPass_header(30)
     
-    #first_second = raw_psec.loc[0:7, :]
-    selected_time = np.sum(raw_psec.iloc[0:31, 1:122], axis =0)
-    plt.plot(header_list_filtered, selected_time)
-    plt.show()
-
+    psec_list = CD.readPowerSpec()
+    raw_psec = psec_list[0]
     rwave_list = CD.readRawWave()
     rwave = rwave_list[0]
+    
+    PD = process_data()
+    
+    psec_vec = PD.generate_features(raw_psec, rwave.iloc[:,1].values)
 
-    fwave_list = CD.readFilteredWave()
-    fwave = fwave_list[0]
+    #header_list_filtered = PD.lowPass_header(30)
+    
+    #first_second = raw_psec.loc[0:7, :]
+    #selected_time = np.sum(raw_psec.iloc[0:31, 1:122], axis =0)
+    #plt.plot(header_list_filtered, selected_time)
+    #plt.show()
+
+    
+
 
     #rwave.plot()
     #fwave.plot()
 
-
+    '''
     fig, axs = plt.subplots(2,1, constrained_layout=True)
     axs[0].plot(np.array(range(len(rwave))), rwave[" Value"])
     axs[0].set_title('Raw Wave Data')
@@ -110,6 +118,12 @@ if __name__=="__main__":
 
     plt.show()
     
-    raw_psec = raw_psec.iloc[:, 1:122]
-    sns.heatmap(raw_psec)
+    raw_psec = raw_psec.iloc[:, 1:256]
+    ax = sns.heatmap(raw_psec)
+    #xticks = np.arange(63.5+1)
+    #ax.set_xticks(xticks*ax.get_xlim()[1]/(2*math.pi))
+    ax.set_xlabel('Frequency (Hz)')
+    ax.set_ylabel('Time (s)')
+    ax.set_title('Power Spectrum Heatmap')
     plt.show()
+    '''
