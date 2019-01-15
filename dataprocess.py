@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 import os
-import seaborn as sns
+import glob
+# import seaborn as sns
 import math
 import speechpy
 #import librosa
@@ -72,14 +73,23 @@ class process_data:
         
         return np.concatenate((medians, p_25, p_75), axis=1)
 
-                
+def listdir_nohidden(path):
+    return glob.glob(os.path.join(path, '*'))
 
 if __name__=="__main__":
-    
-    dir_path = 'testsubject1/2018-03-17/'
-    CD = collect_data(dir_path)
-    
-    psec_list = CD.readPowerSpec()
+
+    targetstr = 'mlmps18_group01-master/Experimental/beach'
+    folders = listdir_nohidden(targetstr)
+    psec_l = []
+    for folder in folders:
+        print(folder)
+        sub_folder = listdir_nohidden(folder)[0]
+        print(sub_folder)
+        CD = collect_data(sub_folder)
+        psec_list = CD.readPowerSpec()
+        psec_l.append(psec_list)
+
+
     raw_psec = psec_list[0]
     rwave_list = CD.readRawWave()
     rwave = rwave_list[0]
@@ -87,6 +97,7 @@ if __name__=="__main__":
     PD = process_data()
     
     psec_vec = PD.generate_features(raw_psec, rwave.iloc[:,1].values)
+
 
     #header_list_filtered = PD.lowPass_header(30)
     
