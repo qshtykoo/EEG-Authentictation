@@ -78,18 +78,33 @@ def listdir_nohidden(path):
 
 if __name__=="__main__":
 
-    targetstr = 'mlmps18_group01-master/Experimental/beach'
+    targetstr = 'mlmps18_group01-master/Experimental/finger'
+    str2bdeleted = "mlmps18_group01-master/Experimental/finger\\testsubject"
     folders = listdir_nohidden(targetstr)
-    psec_l = []
+    
+    labels = []
+    data = []
+    PD = process_data()
     for folder in folders:
-        print(folder)
         sub_folder = listdir_nohidden(folder)[0]
         print(sub_folder)
         CD = collect_data(sub_folder)
         psec_list = CD.readPowerSpec()
-        psec_l.append(psec_list)
+        rwave_list = CD.readRawWave()
+        label = folder.replace(str2bdeleted, "")
+        for i in range(len(psec_list)):
+            feature_vec = PD.generate_features(psec_list[0], rwave_list[0].iloc[:,1].values)
+            labels.append(label)
+            data.append(feature_vec)
+    
+    #convert list into pandas dataframe
+    data = pd.DataFrame({"data":data, "subject":labels, "task": "finger"})
+    #output as csv file
+    data.to_csv("DataFinger.csv", index=False)
+    
+    
 
-
+    '''
     raw_psec = psec_list[0]
     rwave_list = CD.readRawWave()
     rwave = rwave_list[0]
@@ -97,7 +112,7 @@ if __name__=="__main__":
     PD = process_data()
     
     psec_vec = PD.generate_features(raw_psec, rwave.iloc[:,1].values)
-
+    '''
 
     #header_list_filtered = PD.lowPass_header(30)
     
