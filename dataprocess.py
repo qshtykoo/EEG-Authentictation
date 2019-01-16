@@ -77,9 +77,10 @@ def listdir_nohidden(path):
     return glob.glob(os.path.join(path, '*'))
 
 if __name__=="__main__":
-
-    targetstr = 'mlmps18_group01-master/Experimental/finger'
-    str2bdeleted = "mlmps18_group01-master/Experimental/finger\\testsubject"
+    
+    task = "beach"
+    targetstr = 'mlmps18_group01-master/Experimental/' + task
+    str2bdeleted = "mlmps18_group01-master/Experimental/" + task + "\\testsubject"
     folders = listdir_nohidden(targetstr)
     
     labels = []
@@ -93,14 +94,14 @@ if __name__=="__main__":
         rwave_list = CD.readRawWave()
         label = folder.replace(str2bdeleted, "")
         for i in range(len(psec_list)):
-            feature_vec = PD.generate_features(psec_list[0], rwave_list[0].iloc[:,1].values)
+            feature_vec = PD.generate_features(psec_list[i], rwave_list[i].iloc[:,1].values)
             labels.append(label)
             data.append(feature_vec)
     
     #convert list into pandas dataframe
-    data = pd.DataFrame({"data":data, "subject":labels, "task": "finger"})
+    data = pd.DataFrame({"data":data, "subject":labels, "task": task})
     #output as csv file
-    data.to_csv("DataFinger.csv", index=False)
+    data.to_csv("Data" + task + ".csv", index=False)
     
     
 
