@@ -7,6 +7,8 @@ import glob
 import math
 import speechpy
 #import librosa
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.metrics import confusion_matrix
 
 
 
@@ -76,9 +78,11 @@ class process_data:
 def listdir_nohidden(path):
     return glob.glob(os.path.join(path, '*'))
 
+        
+
 if __name__=="__main__":
     
-    task = "beach"
+    task = "rest"
     targetstr = 'mlmps18_group01-master/Experimental/' + task
     str2bdeleted = "mlmps18_group01-master/Experimental/" + task + "\\testsubject"
     folders = listdir_nohidden(targetstr)
@@ -95,15 +99,27 @@ if __name__=="__main__":
         label = folder.replace(str2bdeleted, "")
         for i in range(len(psec_list)):
             feature_vec = PD.generate_features(psec_list[i], rwave_list[i].iloc[:,1].values)
-            labels.append(label)
-            data.append(feature_vec)
+            labels.append(float(label))
+            data.append(feature_vec[0])
     
     #convert list into pandas dataframe
-    data = pd.DataFrame({"data":data, "subject":labels, "task": task})
+    #data = pd.DataFrame({"data":data, "subject":labels, "task": task})
     #output as csv file
-    data.to_csv("Data" + task + ".csv", index=False)
+    #data.to_csv("Data" + task + ".csv", index=False)
+    
+    train_x = np.array(data)
+    train_y = np.array(labels).reshape(len(labels),1)
+    
+    data = np.concatenate((train_x, train_y), axis=1)
+    np.savetxt(task+".csv", data, delimiter=",")
     
     
+    '''
+    ada = AdaBoostClassifier()
+    ada.fit(train_x, train_y)
+    y = ada.predict(train_x)
+    '''
+    #graph = confusion_matrix(train_y, y)
 
     '''
     raw_psec = psec_list[0]
