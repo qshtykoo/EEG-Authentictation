@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 
 def error_rate(y_true, y):
     err = 0
@@ -40,4 +41,9 @@ ada = AdaBoostClassifier(n_estimators=7)
 ada.fit(train_x, train_y)
 y_ada = ada.predict(train_x)
 
-err_rate = error_rate(train_y, y_ada)
+svm_clf = SVC(gamma='auto')
+y_svm = svm_clf.fit(train_x,train_y).predict(train_x)
+
+err_rate = error_rate(train_y, y_svm)
+
+graph = confusion_matrix(train_y, y_svm)
