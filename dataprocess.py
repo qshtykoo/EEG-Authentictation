@@ -9,6 +9,8 @@ import speechpy
 #import librosa
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.metrics import confusion_matrix
+from statsmodels.tsa.ar_model import AR
+from scipy.fftpack import rfft, irfft, fftfreq
 
 
 
@@ -74,6 +76,21 @@ class process_data:
         p_75 = np.percentile(arr, q=75, axis=0).reshape(1, -1)
         
         return np.concatenate((medians, p_25, p_75), axis=1)
+    
+    def generate_AR_para(self, rawwave):
+        signal = rawwave
+        '''
+        W = fftfreq(signal.size, d= 1 / 512)
+        psd = rfft(signal) #discrete Fourier transform of a real sequence
+        filtered_psd = psd.copy()
+        filtered_psd[(W<30)] = 0
+        filtered_signal = irfft(filtered_psd)
+        '''
+        
+        ARModel = AR(signal)
+        ARModel_fit = ARModel.fit(maxlag=39)
+        
+        return ARModel_fit.params
 
 def listdir_nohidden(path):
     return glob.glob(os.path.join(path, '*'))
@@ -89,6 +106,7 @@ if __name__=="__main__":
     
     labels = []
     data = []
+    AR_params = []
     PD = process_data()
     for folder in folders:
         sub_folder = listdir_nohidden(folder)[0]
@@ -99,8 +117,10 @@ if __name__=="__main__":
         label = folder.replace(str2bdeleted, "")
         for i in range(len(psec_list)):
             feature_vec = PD.generate_features(psec_list[i], rwave_list[i].iloc[:,1].values)
+            AR_param = PD.generate_AR_para(rwave_list[i].iloc[:,1].values)
             labels.append(float(label))
             data.append(feature_vec[0])
+            AR_params.append(AR_param)
     
     #convert list into pandas dataframe
     #data = pd.DataFrame({"data":data, "subject":labels, "task": task})
@@ -111,7 +131,10 @@ if __name__=="__main__":
     train_y = np.array(labels).reshape(len(labels),1)
     
     data = np.concatenate((train_x, train_y), axis=1)
-    #np.savetxt(task+".csv", data, delimiter=",")
+    
+    AR_x = np.array(AR_params)
+    AR_data = np.concatenate((AR_x, train_y), axis=1)
+    np.savetxt(task+"AR.csv", AR_data, delimiter=",")
     
     
     '''
