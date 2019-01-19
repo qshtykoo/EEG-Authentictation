@@ -111,7 +111,7 @@ if __name__=="__main__":
     train_y = np.array(labels).reshape(len(labels),1)
     
     data = np.concatenate((train_x, train_y), axis=1)
-    np.savetxt(task+".csv", data, delimiter=",")
+    #np.savetxt(task+".csv", data, delimiter=",")
     
     
     '''
