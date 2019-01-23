@@ -49,13 +49,23 @@ def run(dataDict, ada=False):
             clf_tree = tree.DecisionTreeClassifier()     
             pred_y = clf_tree.fit(train_x, train_y).predict(test_x)
         else:
-            test_err_list, pred_y = error_list_ada(T, train_x, train_y, test_x, test_y)
+            test_err_list, pred_y = error_list_ada(T, train_x, train_y, test_x, test_y, accuracy=True)
+            #plot accuracy curve over iteration numbers
+            plot_colors = {'beach':'red', 'finger':'blue', 'rest':'green'}
+            plt.plot(T, test_err_list, color = plot_colors[key], label=key)
+            plt.legend()
+            plt.xlabel('Number of estimators (T)')
+            plt.ylabel('Accuracy Score')
+            plt.title('AdaBoost with Decision Stump')
+            
         # Compute confusion matrix
         #cnf_matrix = utils.cal_confusion_matrix(test_y, pred_y)
         #np.set_printoptions(precision=2)
 
         # Plot normalized confusion matrix
         #plt.figure()
+        
+        
 
 
         #utils.plotCM(cnf_matrix, title=key.capitalize()+' Confusion Matrix')
