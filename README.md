@@ -2,4 +2,4 @@
 
 * Xue Yunfei <yunfei.xue@aalto.fi>
 * Que Shuhao <shuhao.que@aalto.fi>
-* Mai Viet Ba <vietba.mai@aalto.fi>
+* Hirvola Viet Ba <vietba.mai@aalto.fi>

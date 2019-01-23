@@ -6,6 +6,7 @@ Created on Sat Jan 19 13:48:05 2019
 import numpy as np
 import matplotlib.pyplot as plt
 from os.path import join
+import pandas as pd
 
 def plotCM(cm, normalize = False, title='Confusion matrix', cmap=plt.cm.Blues):
     #clean plt in case there's some previous plot
@@ -55,16 +56,33 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.tight_layout()
 
 
-def error_rate(y_true, y):
+def error_rate(y_true, y, accuracy=False):
+    if isinstance(y_true, pd.core.frame.DataFrame):
+        y_true = np.ravel(y_true.values) #return a contiguous flattened array
     err = 0
-    for i in range(y_true.shape[0]):
-        if y[i] != y_true.iloc[i,0]:
+    for i in range(len(y_true)):
+        if y[i] != y_true[i]:
             err = err + 1
-    return err / y.shape[0]
+    if accuracy == True:
+        return 1 - (err / len(y_true))
+    else:
+        return err / len(y_true)
 
 def savePlots(model, plot, name, type = "png"):
-    dir = join(r"C:\Users\Administrator\Desktop\EEG\mlmps18_group01\plots", model)
+    dir = join("plots", model)
     plot.savefig(join(dir, name + "." + type))
     plot.clf()
     plot.cla()
     plot.close()
+
+def cal_confusion_matrix(y_true, y_pred):
+    if isinstance(y_true, pd.core.frame.DataFrame):
+        y_true = np.ravel(y_true.values) #return a contiguous flattened array
+    num_class = int(np.max(y_true))
+    c_matrix = np.zeros((num_class, num_class))
+    for i in range(len(y_true)):
+        x = int(y_true[i])
+        y = int(y_pred[i])
+        c_matrix[x-1, y-1] += 1
+    return c_matrix
+
