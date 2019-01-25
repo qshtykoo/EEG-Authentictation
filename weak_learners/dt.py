@@ -35,28 +35,61 @@ def error_list_ada(iteration_num, train_x, train_y, test_x, test_y, weak_learner
     
     return test_err_list, targeted_y_ada
 
-def run(dataDict, ada=False):
+def run(dataDicts, ada=False):
+        
+    acc_ = {"beach": 0, "finger": 0, "rest": 0}
+    rec_ = {"beach": 0, "finger": 0, "rest": 0}
+    pre_ = {"beach": 0, "finger": 0, "rest": 0}
+    
     #Iterate through datasets
-    for key in dataDict:
-        print(">> Dataset: " + key.upper())
-
-        [train_x, train_y, test_x, test_y] = dataDict[key]
-
-        print("Train: X " + str(train_x.shape) + ", Y " + str(train_y.shape)
-        + "\nTest: X " + str(test_x.shape) + ", Y " + str(test_y.shape) + "\n")
+    for dataDict in dataDicts:
+        for key in dataDict:
+            #print(">> Dataset: " + key.upper())
+    
+            [train_x, train_y, test_x, test_y] = dataDict[key]
+            
+            '''
+            print("Train: X " + str(train_x.shape) + ", Y " + str(train_y.shape)
+            + "\nTest: X " + str(test_x.shape) + ", Y " + str(test_y.shape) + "\n")
+            '''
+            
+            if ada == False:
+                clf_tree = tree.DecisionTreeClassifier()     
+                pred_y = clf_tree.fit(train_x, train_y).predict(test_x)
+                
+                acc_[key] += metrics.accuracy_score(test_y, pred_y)
+                rec_[key] += metrics.recall_score(test_y, pred_y, average='micro')
+                pre_[key] += metrics.precision_score(test_y, pred_y, average='micro')
+            else:
+                test_err_list, pred_y = error_list_ada(T, train_x, train_y, test_x, test_y, accuracy=True)
+                #plot accuracy curve over iteration numbers
+                '''
+                plot_colors = {'beach':'red', 'finger':'blue', 'rest':'green'}
+                plt.plot(T, test_err_list, color = plot_colors[key], label=key)
+                plt.legend()
+                plt.xlabel('Number of estimators (T)')
+                plt.ylabel('Accuracy Score')
+                plt.title('AdaBoost with Decision Stump')
+                '''
+    
+    keys = ["beach", "finger", "rest"]
+    
+    for key in keys:
+        
+        acc_[key] /= len(dataDicts)
+        rec_[key] /= len(dataDicts)
+        pre_[key] /= len(dataDicts)
+        
+        print("dataset: " + key)
         
         if ada == False:
-            clf_tree = tree.DecisionTreeClassifier()     
-            pred_y = clf_tree.fit(train_x, train_y).predict(test_x)
+            print("Decision Tree")
         else:
-            test_err_list, pred_y = error_list_ada(T, train_x, train_y, test_x, test_y, accuracy=True)
-            #plot accuracy curve over iteration numbers
-            plot_colors = {'beach':'red', 'finger':'blue', 'rest':'green'}
-            plt.plot(T, test_err_list, color = plot_colors[key], label=key)
-            plt.legend()
-            plt.xlabel('Number of estimators (T)')
-            plt.ylabel('Accuracy Score')
-            plt.title('AdaBoost with Decision Stump')
+            print("Decision Tree with AdaBoost")
+            
+        print("Accuracy: " + str(acc_[key]) + 
+              ", Recall: " + str(rec_[key]) +
+              ", Precision: " + str(pre_[key]))
             
         # Compute confusion matrix
         #cnf_matrix = utils.cal_confusion_matrix(test_y, pred_y)
@@ -64,19 +97,6 @@ def run(dataDict, ada=False):
 
         # Plot normalized confusion matrix
         #plt.figure()
-        
-        
-
-
         #utils.plotCM(cnf_matrix, title=key.capitalize()+' Confusion Matrix')
         #utils.savePlots(modelName, plt, key)
 
-
-        accuracy = metrics.accuracy_score(test_y, pred_y)
-        print("accuracy ",accuracy)
-
-        recall = metrics.recall_score(test_y, pred_y, average='macro')
-        print("recall (macro) ", recall)
-
-        precision = metrics.precision_score(test_y, pred_y, average='macro')
-        print("precision (macro) ", precision)

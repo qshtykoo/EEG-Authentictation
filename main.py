@@ -1,4 +1,4 @@
-from data_processing.dataprocess import generateData
+#from data_processing.dataprocess import generateData
 from data_processing import read_data as rd
 from weak_learners import svm, mlp, dt, NB
 #import platform
@@ -15,9 +15,17 @@ if __name__=="__main__":
     #generateData()
 
     #Get training and testing data
-    dataDict = rd.run()
+    inData = "FARM"
+    dataDicts = rd.run(inData)
 
-    #svm.run(dataDict)
+    #svm.run(dataDicts)
+    # Define value of inData:
+    # <empty string> - MFCC + Power Spectrum
+    # ARM - AR + MFCC
+    # ARP - AR + Power Spectrum
+    
+
+    #svm.run(dataDict, inData)
     #mlp.run(dataDict)
-    dt.run(dataDict, ada=True)
+    #dt.run(dataDicts, ada=False)
     #NB.run(dataDict)

@@ -1,3 +1,5 @@
+*$py.class
+*.pyc
+*.pyo
 *.pdf
-*.jpeg
 *.csv

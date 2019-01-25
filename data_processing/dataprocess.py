@@ -3,9 +3,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 import glob
-import math
+# import seaborn as sns
 import speechpy
-from os.path import join
+#import librosa
+from statsmodels.tsa.ar_model import AR
+from scipy.fftpack import fft, ifft
+
+
 
 class collect_data:
 
@@ -50,8 +54,8 @@ class collect_data:
 
 
 class process_data:
-
-    def generate_features(self, psec, rawwave, low_freq=0, high_freq=30, mode=1):
+   
+    def generate_features(self, psec, rawwave, low_freq=0, high_freq=30, mode=1, filtered=False):
         #first column is time column and should not be selected --> the column index starts from 1
         psec = psec.iloc[:, low_freq * 4 + 1 : high_freq * 4 + 1 + 1] #four columns per hertz
         vector = self.compress(psec)
@@ -60,19 +64,21 @@ class process_data:
             mfcc = speechpy.feature.mfcc(rawwave, sampling_frequency=512, fft_length=256, frame_length=0.3, frame_stride=0.05, low_frequency=0.1)
             vector = np.concatenate((vector, self.compress(mfcc)), axis=1)
         if mode == 2: #AR + power spectrum
-            AR_params = self.generate_AR_para(rawwave, filtered=False)
+            AR_params = self.generate_AR_para(rawwave, filtered=filtered)
             AR_params = np.array(AR_params).reshape(1, len(AR_params))
             vector = np.concatenate((vector, AR_params), axis=1)
         if mode == 3: #AR
-            vector = AR_params 
+            AR_params = self.generate_AR_para(rawwave, filtered=filtered)
+            AR_params = np.array(AR_params).reshape(1, len(AR_params))
+            vector = AR_params
         if mode == 4: #mfcc + AR
             mfcc = speechpy.feature.mfcc(rawwave, sampling_frequency=512, fft_length=256, frame_length=0.3, frame_stride=0.05, low_frequency=0.1)
-            AR_params = self.generate_AR_para(rawwave, filtered=False)
+            AR_params = self.generate_AR_para(rawwave, filtered=filtered)
             AR_params = np.array(AR_params).reshape(1, len(AR_params))
             vector = np.concatenate((self.compress(mfcc), AR_params), axis=1)
         if mode == 5: #mfcc + power spectrum + AR
             mfcc = speechpy.feature.mfcc(rawwave, sampling_frequency=512, fft_length=256, frame_length=0.3, frame_stride=0.05, low_frequency=0.1)
-            AR_params = self.generate_AR_para(rawwave, filtered=False)
+            AR_params = self.generate_AR_para(rawwave, filtered=filtered)
             AR_params = np.array(AR_params).reshape(1, len(AR_params))
             vector = np.concatenate((vector, self.compress(mfcc), AR_params), axis=1)
             
@@ -151,43 +157,101 @@ class process_data:
 def listdir_nohidden(path):
     return glob.glob(os.path.join(path, '*'))
 
-def outputData(task):
+        
 
-    targetstr = join("mlmps18_group01-master", "Experimental", task)
-    str2bdeleted = join("mlmps18_group01-master", "Experimental", task, "\\testsubject")
+if __name__=="__main__":
+    
+    task = "rest"
+    targetstr = '../Experimental/' + task
+    str2bdeleted = "../Experimental/" + task + "\\testsubject"
     folders = listdir_nohidden(targetstr)
-
+    
     labels = []
     data = []
+    AR_params = []
     PD = process_data()
     for folder in folders:
         sub_folder = listdir_nohidden(folder)[0]
         print(sub_folder)
         CD = collect_data(sub_folder)
         psec_list = CD.readPowerSpec()
-        rwave_list = CD.readRawWave()
+        rwave_list = CD.readFilteredWave()
         label = folder.replace(str2bdeleted, "")
         for i in range(len(psec_list)):
-            feature_vec = PD.generate_features(psec_list[i], rwave_list[i].iloc[:,1].values)
+            feature_vec = PD.generate_features(psec_list[i], rwave_list[i].iloc[:,1].values, mode=4, filtered=True)
+            #AR_param = PD.generate_AR_para(rwave_list[i].iloc[:,1].values, filtered=False)
             labels.append(float(label))
             data.append(feature_vec[0])
-
+            #AR_params.append(AR_param)
+    
     #convert list into pandas dataframe
     #data = pd.DataFrame({"data":data, "subject":labels, "task": task})
     #output as csv file
     #data.to_csv("Data" + task + ".csv", index=False)
-
+    
     train_x = np.array(data)
     train_y = np.array(labels).reshape(len(labels),1)
+    
+    data = np.concatenate((train_x, train_y), axis=1)
+    
+    #AR_x = np.array(AR_params)
+    #AR_data = np.concatenate((AR_x, train_y), axis=1)
+    np.savetxt(task + "FARM.csv", data, delimiter=",")
+    
+    
+    '''
+    ada = AdaBoostClassifier()
+    ada.fit(train_x, train_y)
+    y = ada.predict(train_x)
+    '''
+    #graph = confusion_matrix(train_y, y)
 
-    data = np.concatenate((train_x, train_y))
-    np.savetxt(join("data_processing", task + ".csv"), data, delimiter=",")
+    '''
+    raw_psec = psec_list[0]
+    rwave_list = CD.readRawWave()
+    rwave = rwave_list[0]
+    
+    PD = process_data()
+    
+    psec_vec = PD.generate_features(raw_psec, rwave.iloc[:,1].values)
+    '''
 
-    print("Saved!")
+    #header_list_filtered = PD.lowPass_header(30)
+    
+    #first_second = raw_psec.loc[0:7, :]
+    #selected_time = np.sum(raw_psec.iloc[0:31, 1:122], axis =0)
+    #plt.plot(header_list_filtered, selected_time)
+    #plt.show()
 
-def generateData():
-    tasks = ["beach", "rest", "finger"]
+    
 
-    #Output data
-    for task in tasks:
-        outputData(task)
+
+    #rwave.plot()
+    #fwave.plot()
+
+    '''
+    fig, axs = plt.subplots(2,1, constrained_layout=True)
+    axs[0].plot(np.array(range(len(rwave))), rwave[" Value"])
+    axs[0].set_title('Raw Wave Data')
+    axs[0].set_xlabel('Time')
+    axs[0].set_ylabel('Voltage')
+    axs[0].set_ylim([-200, 200])
+    fig.suptitle('Raw Wave Data in Time Domain')
+
+    axs[1].plot(np.array(range(len(fwave))), fwave[" Value"])
+    axs[1].set_title('Raw Filtered Wave Data')
+    axs[1].set_xlabel('Time')
+    axs[1].set_ylabel('Voltage')
+    axs[1].set_ylim([-200, 200])
+
+    plt.show()
+    
+    raw_psec = raw_psec.iloc[:, 1:256]
+    ax = sns.heatmap(raw_psec)
+    #xticks = np.arange(63.5+1)
+    #ax.set_xticks(xticks*ax.get_xlim()[1]/(2*math.pi))
+    ax.set_xlabel('Frequency (Hz)')
+    ax.set_ylabel('Time (s)')
+    ax.set_title('Power Spectrum Heatmap')
+    plt.show()
+    '''
